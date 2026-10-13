@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 
 public class MainActivity extends Activity {
     private static final int CREATE_DOCUMENT_REQUEST = 1;
+    private static final int IMPORT_DOCUMENT_REQUEST = 2;
     private static final int INSTALL_PERMISSION_REQUEST = 72;
     private static final String RELEASES_API = "https://api.github.com/repos/Inrouder/Fixcash/releases/latest";
     private WebView webView;
@@ -80,6 +81,8 @@ public class MainActivity extends Activity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == CREATE_DOCUMENT_REQUEST && resultCode == RESULT_OK && data != null) {
             writeExport(data.getData());
+        } else if (requestCode == IMPORT_DOCUMENT_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            importBackup(data.getData());
         } else if (requestCode == INSTALL_PERMISSION_REQUEST && downloadedUpdate != null
                 && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
                 && getPackageManager().canRequestPackageInstalls()) {
@@ -233,6 +236,28 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void importBackup(Uri uri) {
+        try (InputStream input = getContentResolver().openInputStream(uri)) {
+            if (input == null) throw new IOException("Die ausgewählte Datei konnte nicht geöffnet werden.");
+            java.io.ByteArrayOutputStream output = new java.io.ByteArrayOutputStream();
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = input.read(buffer)) != -1) {
+                if (output.size() + count > 10 * 1024 * 1024) {
+                    throw new IOException("Die Backup-Datei ist größer als 10 MB.");
+                }
+                output.write(buffer, 0, count);
+            }
+            String contents = output.toString("UTF-8");
+            webView.evaluateJavascript("window.receiveFixcashBackup && window.receiveFixcashBackup(" +
+                    JSONObject.quote(contents) + ");", null);
+        } catch (Exception exception) {
+            Toast.makeText(this, "Import fehlgeschlagen: " +
+                    (exception.getMessage() == null ? "Datei konnte nicht gelesen werden." : exception.getMessage()),
+                    Toast.LENGTH_LONG).show();
+        }
+    }
+
     private void writeExport(Uri uri) {
         if (uri == null || exportContents == null) return;
         try (OutputStream output = getContentResolver().openOutputStream(uri)) {
@@ -255,6 +280,17 @@ public class MainActivity extends Activity {
                 create.setType(exportMimeType);
                 create.putExtra(Intent.EXTRA_TITLE, filename);
                 startActivityForResult(create, CREATE_DOCUMENT_REQUEST);
+            });
+        }
+
+        @JavascriptInterface
+        public void importBackup() {
+            runOnUiThread(() -> {
+                Intent open = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                open.addCategory(Intent.CATEGORY_OPENABLE);
+                open.setType("*/*");
+                open.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/json", "text/json", "text/plain"});
+                startActivityForResult(open, IMPORT_DOCUMENT_REQUEST);
             });
         }
 
