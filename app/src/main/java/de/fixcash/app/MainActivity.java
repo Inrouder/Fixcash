@@ -61,7 +61,6 @@ public class MainActivity extends Activity {
         super.onResume();
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
                 && downloadedUpdate != null && downloadedUpdate.exists()
-                && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
                 && getPackageManager().canRequestPackageInstalls()) {
             installDownloadedUpdate();
         }
@@ -82,6 +81,7 @@ public class MainActivity extends Activity {
         if (requestCode == CREATE_DOCUMENT_REQUEST && resultCode == RESULT_OK && data != null) {
             writeExport(data.getData());
         } else if (requestCode == INSTALL_PERMISSION_REQUEST && downloadedUpdate != null
+                && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
                 && getPackageManager().canRequestPackageInstalls()) {
             installDownloadedUpdate();
         }
