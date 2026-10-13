@@ -3,6 +3,16 @@
 Fixcash ist eine Android-App zur Verwaltung von Einnahmen, Ausgaben und
 Verträgen. Die Daten bleiben lokal auf dem Gerät.
 
+## Android-App herunterladen
+
+**[Aktuelle fertige APK herunterladen – Build erfolgreich](https://github.com/Inrouder/Fixcash/actions/runs/38466897152)**
+
+Öffne den Link und lade im Abschnitt **Artifacts** das Paket **Fixcash-debug-apk** herunter. Entpacke die ZIP-Datei; darin liegt `app-debug.apk`, die du auf deinem Android-Gerät installieren kannst.
+
+[Alle Builds und künftig neueste APK anzeigen](https://github.com/Inrouder/Fixcash/actions/workflows/build-apk.yml)
+
+Hinweis: GitHub Actions-Artefakte sind zeitlich begrenzt verfügbar (aktuell 14 Tage). Der Download-Link oben gilt für den derzeit fertigen Build.
+
 ## Funktionen
 
 - Monatliche Übersicht über Einnahmen, Ausgaben und freies Budget
