@@ -65,6 +65,9 @@
     .reminder-date { flex: none; color: var(--amber); font-weight: 700; }
     .empty { padding: 26px 12px; color: var(--muted); text-align: center; }
     .toolbar { display: flex; flex-wrap: wrap; gap: 9px; }
+    .entry-filters { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .entry-filters label { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 650; }
+    .entry-filters select, .entry-filters input { width: 100%; min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid #dce2dc; border-radius: 8px; color: var(--ink); background: white; }
     .entry-list { display: grid; gap: 10px; }
     .entry { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); }
     .entry:last-child { border-bottom: 0; }
@@ -116,6 +119,7 @@
       .entry { grid-template-columns: minmax(0, 1fr) auto; gap: 9px; }
       .entry-actions { grid-column: 1 / -1; justify-content: flex-end; }
       .form-grid { grid-template-columns: 1fr; }
+      .entry-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .field.full, .form-section { grid-column: 1; }
       .contract-card { grid-template-columns: 1fr; }
       .contract-card-right { align-items: flex-start; }
@@ -167,6 +171,20 @@
           </div>
           <section class="panel">
             <div class="panel-heading"><h2>Einträge</h2><span id="entry-count" class="panel-hint"></span></div>
+            <div class="entry-filters" aria-label="Einträge filtern und sortieren">
+              <label for="filter-type">Art
+                <select id="filter-type"><option value="all">Einnahmen &amp; Ausgaben</option><option value="income">Nur Einnahmen</option><option value="expense">Nur Ausgaben</option></select>
+              </label>
+              <label for="filter-status">Status
+                <select id="filter-status"><option value="all">Alle Status</option><option value="active">Aktiv</option><option value="terminated">Gekündigt</option><option value="archived">Archiviert</option></select>
+              </label>
+              <label for="filter-sort">Sortieren nach
+                <select id="filter-sort"><option value="newest">Neueste zuerst</option><option value="oldest">Älteste zuerst</option><option value="name">Name A–Z</option><option value="amount-desc">Betrag: hoch → niedrig</option><option value="amount-asc">Betrag: niedrig → hoch</option></select>
+              </label>
+              <label for="filter-search">Suche
+                <input id="filter-search" type="search" placeholder="Name oder Kategorie" autocomplete="off">
+              </label>
+            </div>
             <div id="all-entries" class="entry-list"></div>
             <div class="toolbar">
               <button id="export-csv" class="button" type="button">CSV exportieren</button>
