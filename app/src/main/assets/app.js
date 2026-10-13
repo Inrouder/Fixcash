@@ -351,6 +351,87 @@
     URL.revokeObjectURL(link.href);
   }
 
+  function validateImportedEntries(data) {
+    if (!Array.isArray(data)) throw new Error("Das Backup muss eine JSON-Liste von Einträgen enthalten.");
+    if (data.length > 10000) throw new Error("Das Backup enthält ungewöhnlich viele Einträge.");
+    const allowedCadences = new Set(["monthly", "quarterly", "semiannual", "yearly"]);
+    const allowedStatuses = new Set(["active", "terminated", "archived"]);
+    const normalized = data.map((item, index) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error(`Eintrag ${index + 1} ist ungültig.`);
+      const amount = Number(item.amount);
+      if (typeof item.name !== "string" || !item.name.trim() ||
+          !Number.isFinite(amount) || amount <= 0 ||
+          !["income", "expense"].includes(item.type) ||
+          !allowedCadences.has(item.cadence) ||
+          typeof item.category !== "string" || !item.category.trim() ||
+          !["forever", "limited"].includes(item.validity) ||
+          !allowedStatuses.has(item.status)) {
+        throw new Error(`Eintrag ${index + 1} enthält fehlende oder ungültige Pflichtangaben.`);
+      }
+      const validity = item.validity;
+      if (validity === "limited" &&
+          (!parseDate(item.validFrom) || !parseDate(item.validUntil) || item.validUntil < item.validFrom)) {
+        throw new Error(`Eintrag ${index + 1} hat einen ungültigen Gültigkeitszeitraum.`);
+      }
+      const nullableMonths = (value) => value === null || value === undefined || value === "" ? null :
+        (Number.isInteger(Number(value)) && Number(value) >= 0 && Number(value) <= 1200 ? Number(value) : NaN);
+      const minTermMonths = nullableMonths(item.minTermMonths);
+      const noticeMonths = nullableMonths(item.noticeMonths);
+      if (Number.isNaN(minTermMonths) || Number.isNaN(noticeMonths)) throw new Error(`Eintrag ${index + 1} hat ungültige Laufzeitangaben.`);
+      const contractStart = item.contractStart || "";
+      if (contractStart && !parseDate(contractStart)) throw new Error(`Eintrag ${index + 1} hat ein ungültiges Vertragsdatum.`);
+      return {
+        id: typeof item.id === "string" && item.id ? item.id : `import-${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
+        name: item.name.trim(),
+        amount,
+        type: item.type,
+        purpose: typeof item.purpose === "string" ? item.purpose : "",
+        contractNumber: typeof item.contractNumber === "string" ? item.contractNumber : "",
+        category: item.category.trim(),
+        cadence: item.cadence,
+        validity,
+        validFrom: validity === "limited" ? item.validFrom : "",
+        validUntil: validity === "limited" ? item.validUntil : "",
+        contractStart,
+        minTermMonths,
+        noticeMonths,
+        status: item.status,
+        createdAt: typeof item.createdAt === "string" ? item.createdAt : new Date().toISOString()
+      };
+    });
+    const ids = new Set();
+    normalized.forEach((entry, index) => {
+      if (ids.has(entry.id)) entry.id = `import-${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`;
+      ids.add(entry.id);
+    });
+    return normalized;
+  }
+
+  function importBackupText(contents) {
+    let imported;
+    try {
+      imported = validateImportedEntries(JSON.parse(contents));
+    } catch (error) {
+      setNotice(`Import fehlgeschlagen: ${error.message || "Die Datei ist kein gültiges Fixcash-JSON-Backup."}`, true);
+      return;
+    }
+    const count = imported.length;
+    const message = `Es wurden ${count} ${count === 1 ? "Eintrag" : "Einträge"} im Backup erkannt. Die aktuell gespeicherten ${entries.length} Einträge werden durch das Backup ersetzt. Exportiere zuerst ein Backup, falls du die aktuellen Daten behalten möchtest. Fortfahren?`;
+    if (!window.confirm(message)) return;
+    const previousEntries = entries;
+    entries = imported;
+    if (!saveEntries()) {
+      entries = previousEntries;
+      return;
+    }
+    resetForm();
+    render();
+    showPage("dashboard");
+    setNotice(`Import abgeschlossen: ${count} ${count === 1 ? "Eintrag wurde" : "Einträge wurden"} wiederhergestellt.`);
+  }
+
+  window.receiveFixcashBackup = importBackupText;
+
   function cancellationLetter(entry) {
     const deadline = deadlineFor(entry);
     const contractDetails = [
@@ -416,6 +497,10 @@
   $("#delete-entry").addEventListener("click", () => deleteEntry(editingId));
   $("#export-csv").addEventListener("click", () => exportData("csv"));
   $("#export-json").addEventListener("click", () => exportData("json"));
+  $("#import-json").addEventListener("click", () => {
+    if (window.Fixcash?.importBackup) window.Fixcash.importBackup();
+    else setNotice("Der Dateiimport ist nur in der Android-App verfügbar.", true);
+  });
   $("#letter-close").addEventListener("click", () => $("#letter-modal").classList.add("hidden"));
   $("#letter-modal").addEventListener("click", (event) => {
     if (event.target === $("#letter-modal")) $("#letter-modal").classList.add("hidden");
