@@ -59,7 +59,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (downloadedUpdate != null && downloadedUpdate.exists() && getPackageManager().canRequestPackageInstalls()) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
+                && downloadedUpdate != null && downloadedUpdate.exists()
+                && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
+                && getPackageManager().canRequestPackageInstalls()) {
             installDownloadedUpdate();
         }
     }
