@@ -5,11 +5,10 @@ Verträgen. Die Daten bleiben lokal auf dem Gerät.
 
 ## Android-App herunterladen
 
-- [Aktuelle stabile Version herunterladen](https://github.com/Inrouder/Fixcash/releases/latest)
-- [Alle Versionen anzeigen](https://github.com/Inrouder/Fixcash/releases)
-- [Debug-Builds öffnen](https://github.com/Inrouder/Fixcash/actions/workflows/build-apk.yml)
+- [APK-Builds und Downloads öffnen](https://github.com/Inrouder/Fixcash/actions/workflows/build-apk.yml)
+- [Veröffentlichte stabile Versionen herunterladen](https://github.com/Inrouder/Fixcash/releases)
 
-Die stabile Version wird als `Fixcash.apk` veröffentlicht. Die App prüft beim Start auf neue GitHub-Releases, schlägt verfügbare Updates vor und kann die APK herunterladen. Android zeigt vor der Installation weiterhin den Systemdialog zur Bestätigung an.
+**Hinweis:** Der Release-Link enthält erst dann eine APK, wenn ein signiertes Release veröffentlicht wurde. Für aktuelle Debug-APKs öffne den Build-Link, wähle den neuesten erfolgreichen Lauf und lade unter **Artifacts** das APK-Artefakt herunter. Läufe, die noch auf „Queued“ oder „In progress“ stehen, haben noch keinen fertigen Download. Die App prüft beim Start auf neue GitHub-Releases, schlägt verfügbare Updates vor und kann die APK herunterladen. Android zeigt vor der Installation weiterhin den Systemdialog zur Bestätigung an.
 
 ## Einmalige Einrichtung für signierte Updates
 
