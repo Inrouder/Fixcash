@@ -1,0 +1,76 @@
+name: Publish signed Fixcash update
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish signed APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      KEYSTORE_BASE64: ${{ secrets.FIXCASH_KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.FIXCASH_KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.FIXCASH_KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.FIXCASH_KEY_PASSWORD }}
+
+    steps:
+      - name: Check release signing secrets
+        if: ${{ env.KEYSTORE_BASE64 == '' || env.KEYSTORE_PASSWORD == '' || env.KEY_ALIAS == '' || env.KEY_PASSWORD == '' }}
+        run: |
+          echo "::warning::Signed update release skipped. Configure FIXCASH_KEYSTORE_BASE64, FIXCASH_KEYSTORE_PASSWORD, FIXCASH_KEY_ALIAS and FIXCASH_KEY_PASSWORD in repository Actions secrets."
+
+      - name: Checkout repository
+        if: ${{ env.KEYSTORE_BASE64 != '' && env.KEYSTORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        if: ${{ env.KEYSTORE_BASE64 != '' && env.KEYSTORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        if: ${{ env.KEYSTORE_BASE64 != '' && env.KEYSTORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+
+      - name: Set up Gradle
+        if: ${{ env.KEYSTORE_BASE64 != '' && env.KEYSTORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Prepare signing key
+        if: ${{ env.KEYSTORE_BASE64 != '' && env.KEYSTORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
+        run: echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/fixcash-release.jks"
+
+      - name: Build signed release APK
+        if: ${{ env.KEYSTORE_BASE64 != '' && env.KEYSTORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
+        env:
+          VERSION_NAME: 1.0.${{ github.run_number }}
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          ./gradlew --no-daemon assembleRelease \
+            -PappVersionName="$VERSION_NAME" \
+            -PappVersionCode="$VERSION_CODE" \
+            -PreleaseStoreFile="$RUNNER_TEMP/fixcash-release.jks" \
+            -PreleaseStorePassword="$KEYSTORE_PASSWORD" \
+            -PreleaseKeyAlias="$KEY_ALIAS" \
+            -PreleaseKeyPassword="$KEY_PASSWORD"
+          cp app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/Fixcash.apk
+
+      - name: Publish GitHub release
+        if: ${{ env.KEYSTORE_BASE64 != '' && env.KEYSTORE_PASSWORD != '' && env.KEY_ALIAS != '' && env.KEY_PASSWORD != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Fixcash v1.0.${{ github.run_number }}
+          generate_release_notes: true
+          files: app/build/outputs/apk/release/Fixcash.apk
