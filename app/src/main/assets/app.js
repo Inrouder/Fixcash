@@ -160,11 +160,28 @@
   }
 
   function renderEntries() {
-    const ordered = entries.slice().sort((left, right) => (right.createdAt || "").localeCompare(left.createdAt || ""));
-    $("#entry-count").textContent = `${entries.length} ${entries.length === 1 ? "Eintrag" : "Einträge"}`;
+    const typeFilter = $("#filter-type")?.value || "all";
+    const statusFilter = $("#filter-status")?.value || "all";
+    const sortMode = $("#filter-sort")?.value || "newest";
+    const query = ($("#filter-search")?.value || "").trim().toLocaleLowerCase("de-DE");
+    const filtered = entries.filter((entry) => {
+      if (typeFilter !== "all" && entry.type !== typeFilter) return false;
+      if (statusFilter !== "all" && entry.status !== statusFilter) return false;
+      if (query && ![entry.name, entry.category, entry.purpose, entry.contractNumber]
+        .some((value) => String(value || "").toLocaleLowerCase("de-DE").includes(query))) return false;
+      return true;
+    });
+    const ordered = filtered.sort((left, right) => {
+      if (sortMode === "name") return left.name.localeCompare(right.name, "de-DE", { sensitivity: "base" });
+      if (sortMode === "amount-desc") return monthlyAmount(right) - monthlyAmount(left);
+      if (sortMode === "amount-asc") return monthlyAmount(left) - monthlyAmount(right);
+      const byDate = (left.createdAt || "").localeCompare(right.createdAt || "");
+      return sortMode === "oldest" ? byDate : -byDate;
+    });
+    $("#entry-count").textContent = filtered.length + " von " + entries.length + " " + (entries.length === 1 ? "Eintrag" : "Einträgen");
     $("#all-entries").innerHTML = ordered.length
       ? ordered.map(entryMarkup).join("")
-      : '<div class="empty">Noch keine Einträge vorhanden.</div>';
+      : '<div class="empty">Keine Einträge passen zu deinen Filtern.</div>';
   }
 
   function renderContracts() {
@@ -496,6 +513,8 @@
   });
   $("#delete-entry").addEventListener("click", () => deleteEntry(editingId));
   $("#export-csv").addEventListener("click", () => exportData("csv"));
+  ["#filter-type", "#filter-status", "#filter-sort"].forEach((selector) => $(selector).addEventListener("change", renderEntries));
+  $("#filter-search").addEventListener("input", renderEntries);
   $("#export-json").addEventListener("click", () => exportData("json"));
   $("#import-json").addEventListener("click", () => {
     if (window.Fixcash?.importBackup) window.Fixcash.importBackup();
