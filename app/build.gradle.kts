@@ -5,6 +5,9 @@ plugins {
 android {
     namespace = "de.fixcash.app"
     compileSdk = 35
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "de.fixcash.app"
